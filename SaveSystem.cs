@@ -3,6 +3,8 @@ using System.IO;
 
 public class SaveSystem : MonoBehaviour
 {
+    public static SaveSystem Instance;
+
     private string savePath => Application.persistentDataPath + "/save.json";
 
     [System.Serializable]
@@ -13,6 +15,11 @@ public class SaveSystem : MonoBehaviour
     }
 
     public BusinessController[] businesses;
+
+    private void Awake()
+    {
+        if (Instance == null) Instance = this;
+    }
 
     public void SaveGame()
     {
