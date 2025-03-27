@@ -22,24 +22,31 @@ public class BusinessController : MonoBehaviour, IPrestigeable
         }
     }
 
-    private void GenerateIncome()
+   private void GenerateIncome()
+{
+    double baseIncome = businessData.baseIncome * Mathf.Max(level, 1);
+
+    double prestigeMultiplier = 1.0 + (0.1 * PrestigeManager.Instance.prestigePoints);
+    float shopBoost = PrestigeShopManager.Instance.GetTotalEffect(PrestigeUpgradeSO.UpgradeType.IncomeMultiplier);
+    double shopMultiplier = 1.0 + shopBoost;
+
+    float autoCollectBoost = PrestigeShopManager.Instance.GetTotalEffect(PrestigeUpgradeSO.UpgradeType.AutoCollect);
+    bool passiveEnabled = autoCollectBoost > 0 && level >= 10;
+
+    if (level > 0 || passiveEnabled)
     {
-        if (level > 0)
+        double finalIncome = baseIncome * prestigeMultiplier * shopMultiplier;
+
+        // Apply passive penalty if below active level
+        if (level < 10 && passiveEnabled)
         {
-            double baseIncome = businessData.baseIncome * level;
-
-            // 🧠 Prestige Points bonus
-            double prestigeMultiplier = 1.0 + (0.1 * PrestigeManager.Instance.prestigePoints);
-
-            // 🛍️ Prestige Shop income bonus
-            float shopBoost = PrestigeShopManager.Instance.GetTotalEffect(PrestigeUpgradeSO.UpgradeType.IncomeMultiplier);
-            double shopMultiplier = 1.0 + shopBoost;
-
-            double finalIncome = baseIncome * prestigeMultiplier * shopMultiplier;
-
-            CurrencyManager.Instance.AddCash(finalIncome);
+            finalIncome *= 0.25; // Only 25% if passive below level 10
         }
+
+        CurrencyManager.Instance.AddCash(finalIncome);
     }
+}
+
 
     public double GetCurrentCost() => currentCost;
 
