@@ -18,10 +18,18 @@ public class PrestigeManager : MonoBehaviour
     // Hook to notify UI/shop of update
     public event Action OnPrestigeCurrencyChanged;
 
+
     private void Awake()
     {
         if (Instance == null) Instance = this;
     }
+
+    private void Start()
+{
+    LoadUpgradeProgress();
+    RenderUpgradeList();
+}
+
 
     /// <summary>
     /// Calculates how many prestige points the player would earn on reset.
