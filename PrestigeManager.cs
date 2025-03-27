@@ -96,4 +96,27 @@ public class PrestigeManager : MonoBehaviour
         if (prestigeDisplay != null)
             prestigeDisplay.text = $"Prestige: {prestigePoints}  |  Unspent: {unspentPrestigeCurrency}";
     }
+
+    private void SaveUpgradeProgress()
+{
+    foreach (var kv in upgradeLevels)
+    {
+        string key = $"prestige_upgrade_{kv.Key.upgradeName}";
+        PlayerPrefs.SetInt(key, kv.Value);
+    }
+    PlayerPrefs.Save();
+}
+
+private void LoadUpgradeProgress()
+{
+    upgradeLevels.Clear();
+
+    foreach (var upgrade in upgrades)
+    {
+        string key = $"prestige_upgrade_{upgrade.upgradeName}";
+        int level = PlayerPrefs.GetInt(key, 0);
+        upgradeLevels[upgrade] = level;
+    }
+}
+
 }
