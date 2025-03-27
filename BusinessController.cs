@@ -29,29 +29,20 @@ public class BusinessController : MonoBehaviour, IPrestigeable
 
    private void GenerateIncome()
 {
-    double baseIncome = businessData.baseIncome * Mathf.Max(level, 1);
-
-    double prestigeMultiplier = 1.0 + (0.1 * PrestigeManager.Instance.prestigePoints);
-    float shopBoost = PrestigeShopManager.Instance.GetTotalEffect(PrestigeUpgradeSO.UpgradeType.IncomeMultiplier);
-    double shopMultiplier = 1.0 + shopBoost;
-
-    float autoCollectBoost = PrestigeShopManager.Instance.GetTotalEffect(PrestigeUpgradeSO.UpgradeType.AutoCollect);
-    bool passiveEnabled = autoCollectBoost > 0 && level >= 10;
-
-    if (level > 0 || passiveEnabled)
+    if (level > 0 && (isAutoCollecting || level >= unlockManagerAtLevel))
     {
-        double finalIncome = baseIncome * prestigeMultiplier * shopMultiplier;
+        double baseIncome = businessData.baseIncome * Mathf.Max(level, 1);
 
-        // Apply passive penalty if below active level
-        if (level < 10 && passiveEnabled)
-        {
-            finalIncome *= 0.25; // Only 25% if passive below level 10
-        }
+        double prestigeMultiplier = 1.0 + (0.1 * PrestigeManager.Instance.prestigePoints);
+        float shopBoost = PrestigeShopManager.Instance.GetTotalEffect(PrestigeUpgradeSO.UpgradeType.IncomeMultiplier);
+        double shopMultiplier = 1.0 + shopBoost;
+
+        double localPrestigeBoost = GetLocalPrestigeMultiplier();
+        double finalIncome = baseIncome * prestigeMultiplier * shopMultiplier * localPrestigeBoost;
 
         CurrencyManager.Instance.AddCash(finalIncome);
     }
 }
-
 
     public double GetCurrentCost() => currentCost;
 
