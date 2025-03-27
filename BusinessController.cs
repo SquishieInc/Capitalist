@@ -26,22 +26,33 @@ public class BusinessController : MonoBehaviour, IPrestigeable
         if (level > 0)
         {
             double baseIncome = businessData.baseIncome * level;
-            double multiplier = 1.0 + (0.1 * PrestigeManager.Instance.prestigePoints); // +10% per point
-            double finalIncome = baseIncome * multiplier;
+
+            // ✅ Prestige Points multiplier (+10% per point)
+            double prestigeMultiplier = 1.0 + (0.1 * PrestigeManager.Instance.prestigePoints);
+
+            // ✅ Prestige Shop income boost
+            float shopBoost = PrestigeShopManager.Instance.GetTotalEffect(PrestigeUpgradeSO.UpgradeType.IncomeMultiplier);
+            double shopMultiplier = 1.0 + shopBoost;
+
+            double finalIncome = baseIncome * prestigeMultiplier * shopMultiplier;
 
             CurrencyManager.Instance.AddCash(finalIncome);
         }
     }
 
     public double GetCurrentCost() => currentCost;
+
     public double GetIncomePerCycle()
     {
         double baseIncome = businessData.baseIncome * level;
-        double multiplier = 1.0 + (0.1 * PrestigeManager.Instance.prestigePoints);
-        return baseIncome * multiplier;
+        double prestigeMultiplier = 1.0 + (0.1 * PrestigeManager.Instance.prestigePoints);
+        float shopBoost = PrestigeShopManager.Instance.GetTotalEffect(PrestigeUpgradeSO.UpgradeType.IncomeMultiplier);
+        double shopMultiplier = 1.0 + shopBoost;
+
+        return baseIncome * prestigeMultiplier * shopMultiplier;
     }
 
-    // 🧼 Reset logic for PrestigeManager
+    // 🔁 Reset logic called by PrestigeManager
     public void OnPrestigeReset()
     {
         level = 0;
