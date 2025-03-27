@@ -6,6 +6,11 @@ public class BusinessController : MonoBehaviour, IPrestigeable
     public int level = 0;
     private double currentCost;
 
+    [Header("Manager Settings")]
+    public bool managerUnlocked = false;
+    public int unlockManagerAtLevel = 25; // Customize per business
+    public bool isAutoCollecting => managerUnlocked;
+
     private void Start()
     {
         currentCost = businessData.baseCost;
