@@ -1,6 +1,7 @@
 using UnityEngine;
 using System;
 using System.Collections.Generic;
+using UnityEngine.SceneManagement;
 
 public class PrestigeManager : MonoBehaviour
 {
@@ -62,6 +63,8 @@ public class PrestigeManager : MonoBehaviour
         Debug.Log($"[Prestige] +{pointsGained} points earned. Total: {prestigePoints}");
         OnPrestigeCurrencyChanged?.Invoke();
         UpdateDisplay();
+
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
     public void SpendPrestigeCurrency(double amount)
