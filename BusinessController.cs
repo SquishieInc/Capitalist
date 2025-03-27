@@ -10,6 +10,7 @@ public class BusinessController : MonoBehaviour, IPrestigeable
     {
         currentCost = businessData.baseCost;
         InvokeRepeating(nameof(GenerateIncome), businessData.incomeInterval, businessData.incomeInterval);
+        CheckAutoCollect();
     }
 
     public void LevelUp()
@@ -27,10 +28,10 @@ public class BusinessController : MonoBehaviour, IPrestigeable
         {
             double baseIncome = businessData.baseIncome * level;
 
-            // ✅ Prestige Points multiplier (+10% per point)
+            // 🧠 Prestige Points bonus
             double prestigeMultiplier = 1.0 + (0.1 * PrestigeManager.Instance.prestigePoints);
 
-            // ✅ Prestige Shop income boost
+            // 🛍️ Prestige Shop income bonus
             float shopBoost = PrestigeShopManager.Instance.GetTotalEffect(PrestigeUpgradeSO.UpgradeType.IncomeMultiplier);
             double shopMultiplier = 1.0 + shopBoost;
 
@@ -52,10 +53,19 @@ public class BusinessController : MonoBehaviour, IPrestigeable
         return baseIncome * prestigeMultiplier * shopMultiplier;
     }
 
-    // 🔁 Reset logic called by PrestigeManager
     public void OnPrestigeReset()
     {
         level = 0;
         currentCost = businessData.baseCost;
+    }
+
+    private void CheckAutoCollect()
+    {
+        float autoCollectBoost = PrestigeShopManager.Instance.GetTotalEffect(PrestigeUpgradeSO.UpgradeType.AutoCollect);
+        if (autoCollectBoost > 0)
+        {
+            Debug.Log($"[AutoCollect] Enabled for {businessData.businessName}");
+            // Future behavior: auto-level unlock or background generation
+        }
     }
 }
