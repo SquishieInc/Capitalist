@@ -52,8 +52,14 @@ public class OfflineEarningsSystem : MonoBehaviour
         if (offlineDuration.TotalSeconds <= 0) return;
 
         AntiCheatManager.Instance.RunAntiCheatCheck(serverTime);
+
         double baseEarnings = offlineDuration.TotalSeconds * offlineEarningsPerSecond;
-        calculatedEarnings = AntiCheatManager.Instance.ApplyPenaltyIfCheating(baseEarnings, true);
+
+        // 🟡 Apply Offline Earnings Boost from Prestige Shop
+        float offlineBoost = PrestigeShopManager.Instance.GetTotalEffect(PrestigeUpgradeSO.UpgradeType.OfflineEarningsBoost);
+        double multiplier = 1.0 + offlineBoost;
+
+        calculatedEarnings = AntiCheatManager.Instance.ApplyPenaltyIfCheating(baseEarnings * multiplier, true);
 
         adPopup.ShowPopup(calculatedEarnings);
     }
@@ -65,7 +71,7 @@ public class OfflineEarningsSystem : MonoBehaviour
         Debug.Log($"Offline earnings granted: ${reward}");
     }
 
-    private void SyncEventTimer() { /* Optional future event sync */ }
+    private void SyncEventTimer() { }
 
     private void OnApplicationQuit() => SaveExitTime();
     private void OnApplicationPause(bool pause) { if (pause) SaveExitTime(); }
