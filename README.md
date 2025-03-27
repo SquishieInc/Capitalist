@@ -1,0 +1,2 @@
+# Capitalist
+Capitalist game
