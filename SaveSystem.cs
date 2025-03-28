@@ -5,8 +5,6 @@ public class SaveSystem : MonoBehaviour
 {
     public static SaveSystem Instance;
 
-    public bool[] managerStatuses;
-
     private string savePath => Application.persistentDataPath + "/save.json";
 
     [System.Serializable]
@@ -14,6 +12,7 @@ public class SaveSystem : MonoBehaviour
     {
         public double cash;
         public int[] businessLevels;
+        public bool[] managerStatuses;
     }
 
     public BusinessController[] businesses;
@@ -28,12 +27,14 @@ public class SaveSystem : MonoBehaviour
         SaveData data = new SaveData
         {
             cash = CurrencyManager.Instance.cash,
-            businessLevels = new int[businesses.Length]
+            businessLevels = new int[businesses.Length],
+            managerStatuses = new bool[businesses.Length]
         };
 
         for (int i = 0; i < businesses.Length; i++)
         {
             data.businessLevels[i] = businesses[i].level;
+            data.managerStatuses[i] = businesses[i].managerUnlocked;
         }
 
         File.WriteAllText(savePath, JsonUtility.ToJson(data));
@@ -49,6 +50,7 @@ public class SaveSystem : MonoBehaviour
         for (int i = 0; i < businesses.Length; i++)
         {
             businesses[i].level = data.businessLevels[i];
+            businesses[i].managerUnlocked = data.managerStatuses[i];
         }
     }
 }
