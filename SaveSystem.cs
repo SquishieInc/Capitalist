@@ -5,6 +5,8 @@ public class SaveSystem : MonoBehaviour
 {
     public static SaveSystem Instance;
 
+    public bool[] managerStatuses;
+
     private string savePath => Application.persistentDataPath + "/save.json";
 
     [System.Serializable]
