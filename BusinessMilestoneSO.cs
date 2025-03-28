@@ -4,6 +4,16 @@ using System.Collections.Generic;
 [CreateAssetMenu(fileName = "NewBusinessMilestones", menuName = "Idle/Business Milestone Table")]
 public class BusinessMilestoneSO : ScriptableObject
 {
+
+    public enum MilestoneEffectType
+    {
+        IncomeMultiplier,
+        AutoCollect,
+        GemsReward,
+        SpeedBoost,
+        PlayEffect
+    }
+
     [System.Serializable]
     public class Milestone
     {
