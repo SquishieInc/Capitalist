@@ -1,6 +1,6 @@
 using UnityEngine;
 using UnityEngine.Events;
-using IronSourceSDK; // Make sure IronSource is properly integrated
+using IronSourceSDK; // Ensure IronSource plugin is integrated
 
 public class AdManager : MonoBehaviour
 {
@@ -11,12 +11,14 @@ public class AdManager : MonoBehaviour
     public UnityEvent OnAdAvailable;
     public UnityEvent OnAdUnavailable;
 
+    private string currentAdContext = "default";
+
     private void Awake()
     {
         if (Instance == null) Instance = this;
 
-        // IronSource initialization
         IronSource.Agent.init("your_app_key", IronSourceAdUnits.REWARDED_VIDEO);
+
         IronSourceEvents.onRewardedVideoAvailabilityChangedEvent += OnRewardedAvailabilityChanged;
         IronSourceEvents.onRewardedVideoAdRewardedEvent += OnAdRewarded;
     }
@@ -37,8 +39,16 @@ public class AdManager : MonoBehaviour
 
     public void ShowRewardedAd(string context = "income_boost")
     {
+        if (AdCooldownManager.Instance.IsOnCooldown(context))
+        {
+            float remaining = AdCooldownManager.Instance.GetRemainingCooldown(context);
+            Debug.LogWarning($"[AdManager] Ad '{context}' is on cooldown ({Mathf.CeilToInt(remaining)}s remaining)");
+            return;
+        }
+
         if (IronSource.Agent.isRewardedVideoAvailable())
         {
+            currentAdContext = context;
             IronSource.Agent.showRewardedVideo(rewardedPlacement);
             Debug.Log($"[AdManager] Showing rewarded ad for: {context}");
         }
@@ -50,27 +60,29 @@ public class AdManager : MonoBehaviour
 
     private void OnAdRewarded(IronSourcePlacement placement)
     {
-        Debug.Log($"[AdManager] Rewarded ad completed: {placement.getRewardName()} x{placement.getRewardAmount()}");
+        string rewardType = currentAdContext.ToLower();
+        Debug.Log($"[AdManager] Rewarded ad completed: {rewardType}");
 
-        // Example: Reward based on context, or placement name
-        switch (placement.getRewardName().ToLower())
+        switch (rewardType)
         {
             case "income_boost":
-                TimedBuffManager.Instance.ApplyBuff(TimedBuffType.IncomeMultiplier, 1.0f, 60f); // x2 income for 60 sec
+                TimedBuffManager.Instance.ApplyBuff(TimedBuffType.IncomeMultiplier, 1.0f, 60f); // x2 income for 60s
                 break;
 
             case "speed_boost":
-                TimedBuffManager.Instance.ApplyBuff(TimedBuffType.SpeedMultiplier, 1.0f, 30f); // x2 speed for 30 sec
+                TimedBuffManager.Instance.ApplyBuff(TimedBuffType.SpeedMultiplier, 1.0f, 30f); // x2 speed for 30s
                 break;
 
             case "autocollect":
-                TimedBuffManager.Instance.ApplyBuff(TimedBuffType.AutoCollect, 1.0f, 120f); // auto-run 2 min
+                TimedBuffManager.Instance.ApplyBuff(TimedBuffType.AutoCollect, 1.0f, 120f); // auto-collect for 2 mins
                 break;
 
             default:
-                // Default reward (or handle gems, etc.)
-                CurrencyManager.Instance.AddGems(5);
+                CurrencyManager.Instance.AddGems(5); // fallback reward
                 break;
         }
+
+        // Start cooldown
+        AdCooldownManager.Instance.StartCooldown(rewardType);
     }
 }
