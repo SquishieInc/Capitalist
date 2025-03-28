@@ -11,6 +11,9 @@ public class BusinessController : MonoBehaviour, IPrestigeable
     public int unlockManagerAtLevel = 25; // Customize per business
     public bool isAutoCollecting => managerUnlocked;
 
+    public BusinessController controller;
+    public GameObject hireButton;
+
     private void Start()
     {
         currentCost = businessData.baseCost;
