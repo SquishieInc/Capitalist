@@ -33,28 +33,38 @@ public class PrestigeManager : MonoBehaviour
             return;
         }
 
+        // Add prestige currency
         prestigePoints += pointsGained;
         unspentPrestigeCurrency += pointsGained;
 
+        // Reset economy
         CurrencyManager.Instance.ResetCash();
 
+        // Reset all prestigeable systems
         foreach (var p in FindObjectsOfType<MonoBehaviour>())
         {
             if (p is IPrestigeable prestigeable)
                 prestigeable.OnPrestigeReset();
         }
 
+        // Save game
         SaveSystem.Instance.SaveGame();
+
+        // Notify listeners
         OnPrestigeCurrencyChanged?.Invoke();
         UpdateDisplay();
 
-        // ✅ Analytics
+        // Analytics
         AnalyticsManager.Instance.LogPrestige();
 
-        // ✅ Show summary popup
-        var popup = FindObjectOfType<PrestigeSummaryPopup>();
-        if (popup != null)
-            popup.Show(pointsGained);
+        // VFX
+        VFXManager.Instance?.PlayVFX(VFXManager.Instance.prestigeBurst, Vector3.zero);
+
+        // SFX
+        AudioManager.Instance?.PlaySFX(AudioManager.Instance.prestigeSFX);
+
+        // Rate prompt check
+        RateAppManager.Instance?.RegisterPrestige();
 
         // Optional: reload scene
         UnityEngine.SceneManagement.SceneManager.LoadScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex);
