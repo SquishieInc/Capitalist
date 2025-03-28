@@ -89,6 +89,7 @@ public class BusinessController : MonoBehaviour, IPrestigeable
         level = 0;
         currentCost = businessData.baseCost;
         managerUnlocked = false;
+        lastMilestoneBonus = 1f;
     }
 
     private void CheckAutoCollect()
@@ -121,6 +122,10 @@ public class BusinessController : MonoBehaviour, IPrestigeable
 
     private void TriggerMilestonePopup(float newBonus)
     {
+        var milestone = milestoneTable.milestones.Find(m => m.requiredLevel == level);
+        if (milestone == null) return;
+
+        // Display milestone popup
         if (milestonePopupPrefab && popupAnchor)
         {
             GameObject popup = Instantiate(milestonePopupPrefab, popupAnchor.position, Quaternion.identity, popupAnchor);
@@ -133,6 +138,27 @@ public class BusinessController : MonoBehaviour, IPrestigeable
         VFXManager.Instance?.PlayVFX(VFXManager.Instance.milestoneFlash, popupAnchor.position);
         AudioManager.Instance?.PlaySFX(AudioManager.Instance.milestoneSFX);
 
-        Debug.Log($"[Milestone] {businessData.businessName} hit x{newBonus} bonus!");
+        // Trigger milestone effect
+        switch (milestone.effectType)
+        {
+            case MilestoneEffectType.AutoCollect:
+                HireManager();
+                break;
+
+            case MilestoneEffectType.GemsReward:
+                CurrencyManager.Instance.AddGems(milestone.effectValue);
+                break;
+
+            case MilestoneEffectType.SpeedBoost:
+                // Placeholder: could scale income interval for X seconds
+                Debug.Log($"[Milestone] Speed boost triggered (not implemented)");
+                break;
+
+            case MilestoneEffectType.PlayEffect:
+                Debug.Log($"[Milestone] Visual effect trigger (handled via VFXManager)");
+                break;
+        }
+
+        Debug.Log($"[Milestone] {businessData.businessName} hit {milestone.effectType} effect!");
     }
 }
