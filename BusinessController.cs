@@ -1,50 +1,133 @@
-using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
-public class BusinessUI : MonoBehaviour
+public class BusinessController : MonoBehaviour, IPrestigeable
 {
-    [Header("UI Elements")]
-    public TMP_Text businessName;
-    public TMP_Text levelText;
-    public TMP_Text costText;
-    public TMP_Text incomeText;
-    public TMP_Text milestoneBonusText;
-    public Button levelUpButton;
+    [Header("Business Data")]
+    public BusinessSO businessData;
+    public BusinessMilestoneSO milestoneTable;
+    public GameBalanceConfigSO gameConfig;
 
-    [Header("Business Logic")]
-    public BusinessController controller;
+    [Header("Progress")]
+    public int level = 0;
+    private double currentCost;
+
+    [Header("Manager Settings")]
+    public bool managerUnlocked = false;
+    public GameObject milestonePopupPrefab;
+    public Transform popupAnchor;
+
+    private float lastMilestoneBonus = 1f;
 
     private void Start()
     {
-        if (levelUpButton != null)
-            levelUpButton.onClick.AddListener(OnLevelUpClicked);
-
-        UpdateUI();
+        currentCost = businessData.baseCost;
+        InvokeRepeating(nameof(GenerateIncome), businessData.incomeInterval, businessData.incomeInterval);
+        CheckAutoCollect();
     }
 
-    private void Update()
+    public void LevelUp()
     {
-        // Optionally auto-refresh milestone text live
-        UpdateUI(); 
+        if (CurrencyManager.Instance.SpendCash(currentCost))
+        {
+            level++;
+            currentCost *= businessData.costMultiplier;
+
+            float newBonus = (float)GetLocalPrestigeMultiplier();
+            if (newBonus > lastMilestoneBonus)
+            {
+                lastMilestoneBonus = newBonus;
+                TriggerMilestonePopup(newBonus);
+            }
+        }
     }
 
-    private void OnLevelUpClicked()
+    private void GenerateIncome()
     {
-        controller.LevelUp();
-        UpdateUI();
+        if (level > 0 && (managerUnlocked || level >= GetManagerUnlockLevel()))
+        {
+            double baseIncome = businessData.baseIncome * Mathf.Pow(level, businessData.incomeGrowth);
+
+            double prestigeMultiplier = 1.0 + (gameConfig != null ? gameConfig.prestigeMultiplierPerPoint : 0.1) * PrestigeManager.Instance.prestigePoints;
+            float shopBoost = PrestigeShopManager.Instance.GetTotalEffect(PrestigeUpgradeSO.UpgradeType.IncomeMultiplier);
+            double shopMultiplier = 1.0 + shopBoost;
+            double localBoost = GetLocalPrestigeMultiplier();
+
+            double finalIncome = baseIncome * prestigeMultiplier * shopMultiplier * localBoost;
+
+            CurrencyManager.Instance.AddCash(finalIncome);
+        }
     }
 
-    private void UpdateUI()
+    public double GetCurrentCost() => currentCost;
+
+    public double GetIncomePerCycle()
     {
-        if (controller == null || controller.businessData == null) return;
+        double baseIncome = businessData.baseIncome * Mathf.Pow(level, businessData.incomeGrowth);
+        double prestigeMultiplier = 1.0 + (gameConfig != null ? gameConfig.prestigeMultiplierPerPoint : 0.1) * PrestigeManager.Instance.prestigePoints;
+        float shopBoost = PrestigeShopManager.Instance.GetTotalEffect(PrestigeUpgradeSO.UpgradeType.IncomeMultiplier);
+        double shopMultiplier = 1.0 + shopBoost;
+        double localBoost = GetLocalPrestigeMultiplier();
 
-        businessName.text = controller.businessData.businessName;
-        levelText.text = $"Level: {controller.level}";
-        costText.text = $"Upgrade: ${controller.GetCurrentCost():0}";
-        incomeText.text = $"Income: ${controller.GetIncomePerCycle():0}/sec";
+        return baseIncome * prestigeMultiplier * shopMultiplier * localBoost;
+    }
 
-        double milestoneBonus = controller.GetLocalMilestoneMultiplier();
-        milestoneBonusText.text = $"Milestone Bonus: x{milestoneBonus:0.0}";
+    public void OnPrestigeReset()
+    {
+        level = 0;
+        currentCost = businessData.baseCost;
+        managerUnlocked = false;
+    }
+
+    public void HireManager()
+    {
+        if (!managerUnlocked)
+        {
+            managerUnlocked = true;
+            Debug.Log($"Manager hired for {businessData.businessName}!");
+        }
+    }
+
+    private void CheckAutoCollect()
+    {
+        float autoCollectBoost = PrestigeShopManager.Instance.GetTotalEffect(PrestigeUpgradeSO.UpgradeType.AutoCollect);
+        if (autoCollectBoost > 0 && level >= GetManagerUnlockLevel() && !managerUnlocked)
+        {
+            HireManager();
+        }
+    }
+
+    private int GetManagerUnlockLevel()
+    {
+        return gameConfig != null ? gameConfig.defaultManagerUnlockLevel : 25;
+    }
+
+    private double GetLocalPrestigeMultiplier()
+    {
+        if (milestoneTable == null || milestoneTable.milestones.Count == 0)
+            return 1.0;
+
+        float highestBonus = 1.0f;
+        foreach (var milestone in milestoneTable.milestones)
+        {
+            if (level >= milestone.requiredLevel && milestone.incomeMultiplier > highestBonus)
+            {
+                highestBonus = milestone.incomeMultiplier;
+            }
+        }
+
+        return highestBonus;
+    }
+
+    private void TriggerMilestonePopup(float newBonus)
+    {
+        if (milestonePopupPrefab && popupAnchor)
+        {
+            GameObject popup = Instantiate(milestonePopupPrefab, popupAnchor.position, Quaternion.identity, popupAnchor);
+            TMP_Text text = popup.GetComponentInChildren<TMP_Text>();
+            if (text) text.text = $"Milestone Reached!\nx{newBonus} Income!";
+            Destroy(popup, 2f);
+        }
+
+        Debug.Log($"[Milestone] {businessData.businessName} hit x{newBonus} bonus!");
     }
 }
