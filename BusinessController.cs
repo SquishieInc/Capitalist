@@ -2,7 +2,11 @@ using UnityEngine;
 
 public class BusinessController : MonoBehaviour, IPrestigeable
 {
+    [Header("Business Data")]
     public BusinessSO businessData;
+    public BusinessMilestoneSO milestoneTable;
+
+    [Header("Progress")]
     public int level = 0;
     private double currentCost;
 
@@ -29,15 +33,20 @@ public class BusinessController : MonoBehaviour, IPrestigeable
 
     private void GenerateIncome()
     {
-        // Only run if level > 0 AND either: manually triggered or automated by manager
+        // Business must be active OR auto-collecting (manager hired or milestone reached)
         if (level > 0 && (isAutoCollecting || level >= unlockManagerAtLevel))
         {
             double baseIncome = businessData.baseIncome * Mathf.Max(level, 1);
 
+            // Global prestige point multiplier
             double prestigeMultiplier = 1.0 + (0.1 * PrestigeManager.Instance.prestigePoints);
+
+            // Prestige Shop upgrade multiplier
             float shopBoost = PrestigeShopManager.Instance.GetTotalEffect(PrestigeUpgradeSO.UpgradeType.IncomeMultiplier);
             double shopMultiplier = 1.0 + shopBoost;
-            double localPrestigeBoost = GetLocalPrestigeMultiplier(); // stub for future
+
+            // Local business milestone multiplier
+            double localPrestigeBoost = GetLocalPrestigeMultiplier();
 
             double finalIncome = baseIncome * prestigeMultiplier * shopMultiplier * localPrestigeBoost;
 
@@ -79,13 +88,25 @@ public class BusinessController : MonoBehaviour, IPrestigeable
         float autoCollectBoost = PrestigeShopManager.Instance.GetTotalEffect(PrestigeUpgradeSO.UpgradeType.AutoCollect);
         if (autoCollectBoost > 0 && level >= unlockManagerAtLevel && !managerUnlocked)
         {
-            HireManager(); // Optional auto-unlock if desired
+            HireManager(); // Optional: automatically hires manager when conditions are met
         }
     }
 
     private double GetLocalPrestigeMultiplier()
     {
-        // Placeholder for future BusinessMilestoneSO
-        return 1.0;
+        if (milestoneTable == null || milestoneTable.milestones.Count == 0)
+            return 1.0;
+
+        float highestBonus = 1.0f;
+
+        foreach (var milestone in milestoneTable.milestones)
+        {
+            if (level >= milestone.requiredLevel && milestone.incomeMultiplier > highestBonus)
+            {
+                highestBonus = milestone.incomeMultiplier;
+            }
+        }
+
+        return highestBonus;
     }
 }
