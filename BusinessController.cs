@@ -5,7 +5,6 @@ public class BusinessController : MonoBehaviour, IPrestigeable
     [Header("Business Data")]
     public BusinessSO businessData;
     public BusinessMilestoneSO milestoneTable;
-    public GameBalanceConfigSO gameConfig;
 
     [Header("Progress")]
     public int level = 0;
@@ -29,6 +28,8 @@ public class BusinessController : MonoBehaviour, IPrestigeable
     {
         if (CurrencyManager.Instance.SpendCash(currentCost))
         {
+            var config = GameConfigManager.Instance.Config;
+
             level++;
             currentCost *= businessData.costMultiplier;
 
@@ -43,11 +44,13 @@ public class BusinessController : MonoBehaviour, IPrestigeable
 
     private void GenerateIncome()
     {
-        if (level > 0 && (managerUnlocked || level >= GetManagerUnlockLevel()))
+        var config = GameConfigManager.Instance.Config;
+
+        if (level > 0 && (managerUnlocked || level >= config.defaultManagerUnlockLevel))
         {
             double baseIncome = businessData.baseIncome * Mathf.Pow(level, businessData.incomeGrowth);
 
-            double prestigeMultiplier = 1.0 + (gameConfig != null ? gameConfig.prestigeMultiplierPerPoint : 0.1) * PrestigeManager.Instance.prestigePoints;
+            double prestigeMultiplier = 1.0 + config.prestigeMultiplierPerPoint * PrestigeManager.Instance.prestigePoints;
             float shopBoost = PrestigeShopManager.Instance.GetTotalEffect(PrestigeUpgradeSO.UpgradeType.IncomeMultiplier);
             double shopMultiplier = 1.0 + shopBoost;
             double localBoost = GetLocalPrestigeMultiplier();
@@ -62,8 +65,10 @@ public class BusinessController : MonoBehaviour, IPrestigeable
 
     public double GetIncomePerCycle()
     {
+        var config = GameConfigManager.Instance.Config;
+
         double baseIncome = businessData.baseIncome * Mathf.Pow(level, businessData.incomeGrowth);
-        double prestigeMultiplier = 1.0 + (gameConfig != null ? gameConfig.prestigeMultiplierPerPoint : 0.1) * PrestigeManager.Instance.prestigePoints;
+        double prestigeMultiplier = 1.0 + config.prestigeMultiplierPerPoint * PrestigeManager.Instance.prestigePoints;
         float shopBoost = PrestigeShopManager.Instance.GetTotalEffect(PrestigeUpgradeSO.UpgradeType.IncomeMultiplier);
         double shopMultiplier = 1.0 + shopBoost;
         double localBoost = GetLocalPrestigeMultiplier();
@@ -89,16 +94,13 @@ public class BusinessController : MonoBehaviour, IPrestigeable
 
     private void CheckAutoCollect()
     {
+        var config = GameConfigManager.Instance.Config;
+
         float autoCollectBoost = PrestigeShopManager.Instance.GetTotalEffect(PrestigeUpgradeSO.UpgradeType.AutoCollect);
-        if (autoCollectBoost > 0 && level >= GetManagerUnlockLevel() && !managerUnlocked)
+        if (autoCollectBoost > 0 && level >= config.defaultManagerUnlockLevel && !managerUnlocked)
         {
             HireManager();
         }
-    }
-
-    private int GetManagerUnlockLevel()
-    {
-        return gameConfig != null ? gameConfig.defaultManagerUnlockLevel : 25;
     }
 
     private double GetLocalPrestigeMultiplier()
