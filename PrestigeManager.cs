@@ -48,10 +48,15 @@ public class PrestigeManager : MonoBehaviour
         OnPrestigeCurrencyChanged?.Invoke();
         UpdateDisplay();
 
-        // ✅ NEW: Track with analytics
+        // ✅ Analytics
         AnalyticsManager.Instance.LogPrestige();
 
-        // Optional: restart scene after reset
+        // ✅ Show summary popup
+        var popup = FindObjectOfType<PrestigeSummaryPopup>();
+        if (popup != null)
+            popup.Show(pointsGained);
+
+        // Optional: reload scene
         UnityEngine.SceneManagement.SceneManager.LoadScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex);
     }
 
