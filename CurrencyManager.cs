@@ -1,88 +1,64 @@
 using UnityEngine;
-using System.IO;
 
-public class SaveSystem : MonoBehaviour
+public class CurrencyManager : MonoBehaviour
 {
-    public static SaveSystem Instance;
+    public static CurrencyManager Instance;
 
-    private string savePath => Application.persistentDataPath + "/save.json";
+    [Header("Primary Currencies")]
+    public double cash = 0;
+    public double totalCashEarned = 0;
 
-    [System.Serializable]
-    public class SaveData
-    {
-        public double cash;
-        public double totalCashEarned;
-        public int gems;
-
-        public int[] businessLevels;
-        public bool[] managerStatuses;
-
-        public double prestigePoints;
-        public double unspentPrestigeCurrency;
-
-        public int[] prestigeUpgradeLevels;
-    }
-
-    public BusinessController[] businesses;
-    public PrestigeShopManager prestigeShopManager;
+    [Header("Premium Currency")]
+    public int gems = 0;
 
     private void Awake()
     {
         if (Instance == null) Instance = this;
     }
 
-    public void SaveGame()
+    public void AddCash(double amount)
     {
-        SaveData data = new SaveData
-        {
-            cash = CurrencyManager.Instance.cash,
-            totalCashEarned = CurrencyManager.Instance.totalCashEarned,
-            gems = CurrencyManager.Instance.gems,
+        cash += amount;
+        totalCashEarned += amount;
 
-            businessLevels = new int[businesses.Length],
-            managerStatuses = new bool[businesses.Length],
-            prestigePoints = PrestigeManager.Instance.prestigePoints,
-            unspentPrestigeCurrency = PrestigeManager.Instance.unspentPrestigeCurrency,
-            prestigeUpgradeLevels = new int[prestigeShopManager.upgrades.Count]
-        };
-
-        for (int i = 0; i < businesses.Length; i++)
-        {
-            data.businessLevels[i] = businesses[i].level;
-            data.managerStatuses[i] = businesses[i].managerUnlocked;
-        }
-
-        for (int i = 0; i < prestigeShopManager.upgrades.Count; i++)
-        {
-            var upgrade = prestigeShopManager.upgrades[i];
-            data.prestigeUpgradeLevels[i] = prestigeShopManager.GetUpgradeLevel(upgrade);
-        }
-
-        File.WriteAllText(savePath, JsonUtility.ToJson(data));
+        AnalyticsManager.Instance.LogEvent("cash_earned", $"amount={amount}");
     }
 
-    public void LoadGame()
+    public bool SpendCash(double amount)
     {
-        if (!File.Exists(savePath)) return;
-
-        SaveData data = JsonUtility.FromJson<SaveData>(File.ReadAllText(savePath));
-
-        CurrencyManager.Instance.cash = data.cash;
-        CurrencyManager.Instance.totalCashEarned = data.totalCashEarned;
-        CurrencyManager.Instance.gems = data.gems;
-
-        for (int i = 0; i < businesses.Length; i++)
+        if (cash >= amount)
         {
-            businesses[i].level = data.businessLevels[i];
-            businesses[i].managerUnlocked = data.managerStatuses[i];
+            cash -= amount;
+            AnalyticsManager.Instance.LogEvent("cash_spent", $"amount={amount}");
+            return true;
         }
+        return false;
+    }
 
-        PrestigeManager.Instance.LoadFromSave(data.prestigePoints, data.unspentPrestigeCurrency);
+    public void AddGems(int amount)
+    {
+        gems += amount;
+        SaveSystem.Instance.SaveGame(); // ✅ Save on gain
+        AnalyticsManager.Instance.LogEvent("gems_earned", $"amount={amount}");
+    }
 
-        for (int i = 0; i < prestigeShopManager.upgrades.Count; i++)
+    public bool SpendGems(int amount)
+    {
+        if (gems >= amount)
         {
-            var upgrade = prestigeShopManager.upgrades[i];
-            prestigeShopManager.SetUpgradeLevel(upgrade, data.prestigeUpgradeLevels[i]);
+            gems -= amount;
+            SaveSystem.Instance.SaveGame(); // ✅ Save on spend
+            AnalyticsManager.Instance.LogEvent("gems_spent", $"amount={amount}");
+            return true;
         }
+        return false;
+    }
+
+    public double GetTotalCashEarned() => totalCashEarned;
+
+    public void ResetCash()
+    {
+        cash = 0;
+        totalCashEarned = 0;
     }
 }
