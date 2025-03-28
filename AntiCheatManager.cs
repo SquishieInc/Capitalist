@@ -1,51 +1,42 @@
 using UnityEngine;
 using System;
-using TMPro;
 
 public class AntiCheatManager : MonoBehaviour
 {
     public static AntiCheatManager Instance;
 
-    public double driftThresholdHours = 3;
-    public bool flagCheaters = true;
+    private bool cheatDetected = false;
+    private TimeSpan drift;
 
-    public GameObject warningPanel;
-    public TMP_Text warningText;
-
-    public bool cheatDetected;
-    public double detectedDriftHours;
-
-    private void Awake() => Instance = this;
-
-    public bool RunAntiCheatCheck(DateTime serverTime)
+    private void Awake()
     {
-        detectedDriftHours = Math.Abs((serverTime - DateTime.UtcNow).TotalHours);
+        if (Instance == null) Instance = this;
+    }
 
-        if (detectedDriftHours > driftThresholdHours)
+    public void RunAntiCheatCheck(DateTime serverTime)
+    {
+        DateTime localExitTime = DateTime.Parse(PlayerPrefs.GetString("LastExitTime", DateTime.UtcNow.ToString()));
+        drift = serverTime - localExitTime;
+
+        if (drift.TotalDays > 3 || drift.TotalSeconds < 0)
         {
             cheatDetected = true;
-            ShowCheatWarning();
-            return true;
+            Debug.LogWarning("[AntiCheat] Time manipulation detected.");
         }
-
-        cheatDetected = false;
-        return false;
-    }
-
-    public double ApplyPenaltyIfCheating(double baseEarnings, bool blockInsteadOfReduce = true)
-    {
-        if (cheatDetected && flagCheaters)
-            return blockInsteadOfReduce ? 0 : baseEarnings * 0.5;
-
-        return baseEarnings;
-    }
-
-    private void ShowCheatWarning()
-    {
-        if (warningPanel != null && warningText != null)
+        else
         {
-            warningPanel.SetActive(true);
-            warningText.text = "⚠ Time manipulation detected.\nOffline rewards limited.";
+            cheatDetected = false;
         }
     }
+
+    public double ApplyPenaltyIfCheating(double value, bool isOfflineEarnings)
+    {
+        if (!cheatDetected) return value;
+
+        float penalty = GameConfigManager.Instance.Config.timeCheatPenaltyMultiplier;
+        Debug.LogWarning($"[AntiCheat] Applying {penalty * 100}% penalty to earnings.");
+        return value * penalty;
+    }
+
+    public bool IsCheating() => cheatDetected;
 }
