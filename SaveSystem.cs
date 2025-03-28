@@ -10,7 +10,12 @@ public class SaveSystem : MonoBehaviour
     [System.Serializable]
     public class SaveData
     {
+        public int saveVersion = 1;
+
         public double cash;
+        public double totalCashEarned;
+        public int gems;
+
         public int[] businessLevels;
         public bool[] managerStatuses;
 
@@ -20,19 +25,27 @@ public class SaveSystem : MonoBehaviour
         public int[] prestigeUpgradeLevels;
     }
 
+    [Header("Game References")]
     public BusinessController[] businesses;
     public PrestigeShopManager prestigeShopManager;
 
     private void Awake()
     {
-        if (Instance == null) Instance = this;
+        if (Instance == null)
+        {
+            Instance = this;
+        }
     }
 
     public void SaveGame()
     {
         SaveData data = new SaveData
         {
+            saveVersion = 1,
             cash = CurrencyManager.Instance.cash,
+            totalCashEarned = CurrencyManager.Instance.totalCashEarned,
+            gems = CurrencyManager.Instance.gems,
+
             businessLevels = new int[businesses.Length],
             managerStatuses = new bool[businesses.Length],
             prestigePoints = PrestigeManager.Instance.prestigePoints,
@@ -53,14 +66,29 @@ public class SaveSystem : MonoBehaviour
         }
 
         File.WriteAllText(savePath, JsonUtility.ToJson(data));
+        Debug.Log("[SaveSystem] Game saved.");
     }
 
     public void LoadGame()
     {
-        if (!File.Exists(savePath)) return;
+        if (!File.Exists(savePath))
+        {
+            Debug.LogWarning("[SaveSystem] No save file found.");
+            return;
+        }
 
         SaveData data = JsonUtility.FromJson<SaveData>(File.ReadAllText(savePath));
+
+        // 🔐 Save version check
+        if (data.saveVersion < 1)
+        {
+            Debug.LogWarning("[SaveSystem] Old or unknown save version detected. Migration logic can be applied here.");
+            // Handle migration logic if needed in future updates
+        }
+
         CurrencyManager.Instance.cash = data.cash;
+        CurrencyManager.Instance.totalCashEarned = data.totalCashEarned;
+        CurrencyManager.Instance.gems = data.gems;
 
         for (int i = 0; i < businesses.Length; i++)
         {
@@ -74,6 +102,17 @@ public class SaveSystem : MonoBehaviour
         {
             var upgrade = prestigeShopManager.upgrades[i];
             prestigeShopManager.SetUpgradeLevel(upgrade, data.prestigeUpgradeLevels[i]);
+        }
+
+        Debug.Log("[SaveSystem] Game loaded.");
+    }
+
+    public void DeleteSave()
+    {
+        if (File.Exists(savePath))
+        {
+            File.Delete(savePath);
+            Debug.Log("[SaveSystem] Save file deleted.");
         }
     }
 }
