@@ -9,11 +9,9 @@ public static class SaveMigrationManager
         if (data.saveVersion < 1)
         {
             Debug.Log("[SaveMigration] Migrating save from unknown version.");
-            data.saveVersion = CURRENT_VERSION;
-
-            // Example: assign default values for new fields
             data.totalCashEarned = Mathf.Max(0f, data.totalCashEarned);
             data.gems = 0;
+            data.saveVersion = CURRENT_VERSION;
         }
 
         // Future versions:
