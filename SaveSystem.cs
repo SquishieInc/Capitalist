@@ -13,9 +13,15 @@ public class SaveSystem : MonoBehaviour
         public double cash;
         public int[] businessLevels;
         public bool[] managerStatuses;
+
+        public double prestigePoints;
+        public double unspentPrestigeCurrency;
+
+        public int[] prestigeUpgradeLevels;
     }
 
     public BusinessController[] businesses;
+    public PrestigeShopManager prestigeShopManager;
 
     private void Awake()
     {
@@ -28,13 +34,22 @@ public class SaveSystem : MonoBehaviour
         {
             cash = CurrencyManager.Instance.cash,
             businessLevels = new int[businesses.Length],
-            managerStatuses = new bool[businesses.Length]
+            managerStatuses = new bool[businesses.Length],
+            prestigePoints = PrestigeManager.Instance.prestigePoints,
+            unspentPrestigeCurrency = PrestigeManager.Instance.unspentPrestigeCurrency,
+            prestigeUpgradeLevels = new int[prestigeShopManager.upgrades.Count]
         };
 
         for (int i = 0; i < businesses.Length; i++)
         {
             data.businessLevels[i] = businesses[i].level;
             data.managerStatuses[i] = businesses[i].managerUnlocked;
+        }
+
+        for (int i = 0; i < prestigeShopManager.upgrades.Count; i++)
+        {
+            var upgrade = prestigeShopManager.upgrades[i];
+            data.prestigeUpgradeLevels[i] = prestigeShopManager.GetUpgradeLevel(upgrade);
         }
 
         File.WriteAllText(savePath, JsonUtility.ToJson(data));
@@ -51,6 +66,14 @@ public class SaveSystem : MonoBehaviour
         {
             businesses[i].level = data.businessLevels[i];
             businesses[i].managerUnlocked = data.managerStatuses[i];
+        }
+
+        PrestigeManager.Instance.LoadFromSave(data.prestigePoints, data.unspentPrestigeCurrency);
+
+        for (int i = 0; i < prestigeShopManager.upgrades.Count; i++)
+        {
+            var upgrade = prestigeShopManager.upgrades[i];
+            prestigeShopManager.SetUpgradeLevel(upgrade, data.prestigeUpgradeLevels[i]);
         }
     }
 }
