@@ -7,4 +7,5 @@ public class BusinessSO : ScriptableObject
     public double baseCost;
     public double baseIncome;
     public float incomeInterval = 1f;
+    public float upgradeCostMultiplier = 1.15f;
 }
