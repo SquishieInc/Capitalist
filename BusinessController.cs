@@ -33,6 +33,13 @@ public class BusinessController : MonoBehaviour, IPrestigeable
         }
     }
 
+        public void OnHireButtonClicked()
+    {
+        controller.HireManager();
+        hireButton.SetActive(false);
+    }
+}
+
     public void LevelUp()
     {
         if (CurrencyManager.Instance.SpendCash(currentCost))
