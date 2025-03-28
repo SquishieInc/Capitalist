@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 
 public class GameConfigManager : MonoBehaviour
 {
@@ -7,17 +8,33 @@ public class GameConfigManager : MonoBehaviour
     [Header("Global Config Reference")]
     public GameBalanceConfigSO config;
 
+    public event Action OnConfigUpdated;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
         {
-            Destroy(gameObject); // Enforce singleton
+            Destroy(gameObject);
             return;
         }
 
         Instance = this;
-        DontDestroyOnLoad(gameObject); // Persist between scenes
+        DontDestroyOnLoad(gameObject);
     }
 
-    public GameBalanceConfigSO Config => config;
+    public GameBalanceConfigSO Config
+    {
+        get => config;
+        set
+        {
+            config = value;
+            NotifyConfigUpdated();
+        }
+    }
+
+    public void NotifyConfigUpdated()
+    {
+        OnConfigUpdated?.Invoke();
+        Debug.Log("[GameConfigManager] Config updated & sync triggered.");
+    }
 }
