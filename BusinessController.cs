@@ -16,11 +16,13 @@ public class BusinessController : MonoBehaviour, IPrestigeable
     public Transform popupAnchor;
 
     private float lastMilestoneBonus = 1f;
+    private float baseTimer;
 
     private void Start()
     {
         currentCost = businessData.baseCost;
-        InvokeRepeating(nameof(GenerateIncome), businessData.incomeInterval, businessData.incomeInterval);
+        baseTimer = businessData.incomeInterval;
+        InvokeRepeating(nameof(GenerateIncome), 0f, baseTimer);
         CheckAutoCollect();
     }
 
@@ -53,10 +55,23 @@ public class BusinessController : MonoBehaviour, IPrestigeable
             float shopBoost = PrestigeShopManager.Instance.GetTotalEffect(PrestigeUpgradeSO.UpgradeType.IncomeMultiplier);
             double shopMultiplier = 1.0 + shopBoost;
             double localBoost = GetLocalPrestigeMultiplier();
+            float buffMultiplier = 1.0f + TimedBuffManager.Instance.GetBuffValue(TimedBuffType.IncomeMultiplier);
 
-            double finalIncome = baseIncome * prestigeMultiplier * shopMultiplier * localBoost;
+            double finalIncome = baseIncome * prestigeMultiplier * shopMultiplier * localBoost * buffMultiplier;
 
             CurrencyManager.Instance.AddCash(finalIncome);
+
+            // Apply speed buff dynamically by adjusting invoke rate
+            float speedMultiplier = 1.0f + TimedBuffManager.Instance.GetBuffValue(TimedBuffType.SpeedMultiplier);
+            float desiredInterval = baseTimer / speedMultiplier;
+
+            // Recalculate invoke rate only if changed significantly
+            if (Mathf.Abs(desiredInterval - baseTimer) > 0.01f)
+            {
+                CancelInvoke(nameof(GenerateIncome));
+                baseTimer = desiredInterval;
+                InvokeRepeating(nameof(GenerateIncome), baseTimer, baseTimer);
+            }
         }
     }
 
@@ -80,8 +95,9 @@ public class BusinessController : MonoBehaviour, IPrestigeable
         float shopBoost = PrestigeShopManager.Instance.GetTotalEffect(PrestigeUpgradeSO.UpgradeType.IncomeMultiplier);
         double shopMultiplier = 1.0 + shopBoost;
         double localBoost = GetLocalPrestigeMultiplier();
+        float buffMultiplier = 1.0f + TimedBuffManager.Instance.GetBuffValue(TimedBuffType.IncomeMultiplier);
 
-        return baseIncome * prestigeMultiplier * shopMultiplier * localBoost;
+        return baseIncome * prestigeMultiplier * shopMultiplier * localBoost * buffMultiplier;
     }
 
     public void OnPrestigeReset()
@@ -90,6 +106,7 @@ public class BusinessController : MonoBehaviour, IPrestigeable
         currentCost = businessData.baseCost;
         managerUnlocked = false;
         lastMilestoneBonus = 1f;
+        baseTimer = businessData.incomeInterval;
     }
 
     private void CheckAutoCollect()
@@ -97,7 +114,8 @@ public class BusinessController : MonoBehaviour, IPrestigeable
         float autoCollectBoost = PrestigeShopManager.Instance.GetTotalEffect(PrestigeUpgradeSO.UpgradeType.AutoCollect);
         var config = GameConfigManager.Instance.Config;
 
-        if (autoCollectBoost > 0 && level >= config.defaultManagerUnlockLevel && !managerUnlocked)
+        if ((autoCollectBoost > 0 || TimedBuffManager.Instance.IsBuffActive(TimedBuffType.AutoCollect))
+            && level >= config.defaultManagerUnlockLevel && !managerUnlocked)
         {
             HireManager();
         }
@@ -125,7 +143,7 @@ public class BusinessController : MonoBehaviour, IPrestigeable
         var milestone = milestoneTable.milestones.Find(m => m.requiredLevel == level);
         if (milestone == null) return;
 
-        // Display milestone popup
+        // Popup
         if (milestonePopupPrefab && popupAnchor)
         {
             GameObject popup = Instantiate(milestonePopupPrefab, popupAnchor.position, Quaternion.identity, popupAnchor);
@@ -138,7 +156,7 @@ public class BusinessController : MonoBehaviour, IPrestigeable
         VFXManager.Instance?.PlayVFX(VFXManager.Instance.milestoneFlash, popupAnchor.position);
         AudioManager.Instance?.PlaySFX(AudioManager.Instance.milestoneSFX);
 
-        // Trigger milestone effect
+        // Milestone effect trigger
         switch (milestone.effectType)
         {
             case MilestoneEffectType.AutoCollect:
@@ -150,12 +168,11 @@ public class BusinessController : MonoBehaviour, IPrestigeable
                 break;
 
             case MilestoneEffectType.SpeedBoost:
-                // Placeholder: could scale income interval for X seconds
-                Debug.Log($"[Milestone] Speed boost triggered (not implemented)");
+                TimedBuffManager.Instance.ApplyBuff(TimedBuffType.SpeedMultiplier, 1.0f, 30f);
                 break;
 
             case MilestoneEffectType.PlayEffect:
-                Debug.Log($"[Milestone] Visual effect trigger (handled via VFXManager)");
+                Debug.Log($"[Milestone] FX only milestone triggered.");
                 break;
         }
 
