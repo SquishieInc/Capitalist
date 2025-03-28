@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using System.IO;
 
 public class DevCheatPanel : MonoBehaviour
 {
@@ -12,6 +13,7 @@ public class DevCheatPanel : MonoBehaviour
     public Button simulatePurchaseButton;
     public Button logSaveButton;
     public Button clearSaveButton;
+    public Button exportSaveButton;
 
     private void Start()
     {
@@ -24,13 +26,15 @@ public class DevCheatPanel : MonoBehaviour
         simulatePurchaseButton.onClick.AddListener(SimulatePurchase);
         logSaveButton.onClick.AddListener(LogSaveData);
         clearSaveButton.onClick.AddListener(() => SaveSystem.Instance.DeleteSave());
+        exportSaveButton.onClick.AddListener(ExportSaveToFile);
     }
 
     private void LevelUpAllBusinesses()
     {
         foreach (var b in SaveSystem.Instance.businesses)
         {
-            for (int i = 0; i < 10; i++) b.LevelUp();
+            for (int i = 0; i < 10; i++)
+                b.LevelUp();
         }
         Debug.Log("[DevCheat] All businesses leveled up by 10.");
     }
@@ -52,7 +56,18 @@ public class DevCheatPanel : MonoBehaviour
 
     private void LogSaveData()
     {
-        string json = JsonUtility.ToJson(SaveSystem.Instance, true);
-        Debug.Log("[DevCheat] Current Save JSON:\n" + json);
+        var data = SaveSystem.Instance.GetCurrentSaveData();
+        string json = JsonUtility.ToJson(data, true);
+        Debug.Log("[DevCheat] Save JSON:\n" + json);
+    }
+
+    private void ExportSaveToFile()
+    {
+        var data = SaveSystem.Instance.GetCurrentSaveData();
+        string json = JsonUtility.ToJson(data, true);
+        string path = Path.Combine(Application.persistentDataPath, "SaveExport.json");
+
+        File.WriteAllText(path, json);
+        Debug.Log($"[DevCheat] Save exported to file: {path}");
     }
 }
