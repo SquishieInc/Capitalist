@@ -71,4 +71,12 @@ public class BusinessController : MonoBehaviour, IPrestigeable
             // Future behavior: auto-level unlock or background generation
         }
     }
+
+    public void HireManager()
+{
+    if (managerUnlocked) return;
+
+    managerUnlocked = true;
+    Debug.Log($"Manager hired for {businessData.businessName}!");
+}
 }
