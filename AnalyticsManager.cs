@@ -8,6 +8,8 @@ public class AnalyticsManager : MonoBehaviour
     private DateTime sessionStartTime;
     private int prestigeCountThisSession = 0;
 
+    public event Action<string> OnLog;
+
     private void Awake()
     {
         if (Instance == null) Instance = this;
@@ -29,10 +31,9 @@ public class AnalyticsManager : MonoBehaviour
 
     public void LogEvent(string eventName, string context = "")
     {
-        Debug.Log($"[Analytics] Event: {eventName} {(string.IsNullOrEmpty(context) ? "" : $"| {context}")}");
-
-        // 🔁 Replace with production SDK call if needed
-        // FirebaseAnalytics.LogEvent(eventName, new Parameter(...))
+        string full = $"Event: {eventName} {(string.IsNullOrEmpty(context) ? "" : $"| {context}")}";
+        Debug.Log("[Analytics] " + full);
+        OnLog?.Invoke(full);
     }
 
     public void LogSessionDuration()
