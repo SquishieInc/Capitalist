@@ -57,10 +57,15 @@ public class PrestigeShopManager : MonoBehaviour
         {
             PrestigeManager.Instance.SpendPrestigeCurrency(cost);
             SetUpgradeLevel(upgrade, currentLevel + 1);
+
+            // ✅ Auto-save after purchase
+            SaveSystem.Instance.SaveGame();
+
+            // 📊 Analytics hook
+            AnalyticsManager.Instance.LogEvent("prestige_upgrade_bought", $"name={upgrade.upgradeName}, level={currentLevel + 1}");
         }
     }
 
-    // Optional fallback save using PlayerPrefs (not used if SaveSystem is active)
     private void LoadUpgradeProgress()
     {
         foreach (var upgrade in upgrades)
