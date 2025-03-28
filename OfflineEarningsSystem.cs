@@ -6,7 +6,6 @@ using System.Collections;
 public class OfflineEarningsSystem : MonoBehaviour
 {
     private const string LastExitKey = "LastExitTime";
-    public double offlineEarningsPerSecond = 10;
     private DateTime serverTime, localExitTime;
     private double calculatedEarnings;
 
@@ -53,9 +52,9 @@ public class OfflineEarningsSystem : MonoBehaviour
 
         AntiCheatManager.Instance.RunAntiCheatCheck(serverTime);
 
-        double baseEarnings = offlineDuration.TotalSeconds * offlineEarningsPerSecond;
+        double baseRate = GameConfigManager.Instance.Config.baseOfflineEarningsRate;
+        double baseEarnings = offlineDuration.TotalSeconds * baseRate;
 
-        // 🟡 Apply Offline Earnings Boost from Prestige Shop
         float offlineBoost = PrestigeShopManager.Instance.GetTotalEffect(PrestigeUpgradeSO.UpgradeType.OfflineEarningsBoost);
         double multiplier = 1.0 + offlineBoost;
 
