@@ -17,7 +17,7 @@ public class HireManagerUI : MonoBehaviour
 
     private void Update()
     {
-        UpdateUI(); // Refresh live if income changes or manager is hired
+        UpdateUI();
     }
 
     private void UpdateUI()
@@ -30,15 +30,16 @@ public class HireManagerUI : MonoBehaviour
             return;
         }
 
-        double hireCost = controller.GetIncomePerCycle() * 5;
+        double multiplier = GameConfigManager.Instance.Config.hireManagerCostMultiplier;
+        double hireCost = controller.GetIncomePerCycle() * multiplier;
         costText.text = $"Hire Manager\nCost: ${hireCost:0}";
-
         hireButtonGroup.SetActive(true);
     }
 
     private void OnHireClicked()
     {
-        double hireCost = controller.GetIncomePerCycle() * 5;
+        double multiplier = GameConfigManager.Instance.Config.hireManagerCostMultiplier;
+        double hireCost = controller.GetIncomePerCycle() * multiplier;
 
         if (CurrencyManager.Instance.SpendCash(hireCost))
         {
