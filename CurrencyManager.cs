@@ -1,15 +1,15 @@
 using UnityEngine;
-using System;
 
 public class CurrencyManager : MonoBehaviour
 {
     public static CurrencyManager Instance;
 
-    public double cash;
-    public double gems;
-    public double eventCurrency;
+    [Header("Primary Currencies")]
+    public double cash = 0;
+    public double totalCashEarned = 0;
 
-    public event Action OnCurrencyUpdated;
+    [Header("Premium Currency")]
+    public int gems = 0;
 
     private void Awake()
     {
@@ -19,19 +19,7 @@ public class CurrencyManager : MonoBehaviour
     public void AddCash(double amount)
     {
         cash += amount;
-        OnCurrencyUpdated?.Invoke();
-    }
-
-    public void AddGems(double amount)
-    {
-        gems += amount;
-        OnCurrencyUpdated?.Invoke();
-    }
-
-    public void AddEventCurrency(double amount)
-    {
-        eventCurrency += amount;
-        OnCurrencyUpdated?.Invoke();
+        totalCashEarned += amount;
     }
 
     public bool SpendCash(double amount)
@@ -39,9 +27,31 @@ public class CurrencyManager : MonoBehaviour
         if (cash >= amount)
         {
             cash -= amount;
-            OnCurrencyUpdated?.Invoke();
             return true;
         }
         return false;
+    }
+
+    public void AddGems(int amount)
+    {
+        gems += amount;
+    }
+
+    public bool SpendGems(int amount)
+    {
+        if (gems >= amount)
+        {
+            gems -= amount;
+            return true;
+        }
+        return false;
+    }
+
+    public double GetTotalCashEarned() => totalCashEarned;
+
+    public void ResetCash()
+    {
+        cash = 0;
+        totalCashEarned = 0;
     }
 }
