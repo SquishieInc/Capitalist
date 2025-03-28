@@ -39,32 +39,7 @@ public class SaveSystem : MonoBehaviour
 
     public void SaveGame()
     {
-        SaveData data = new SaveData
-        {
-            saveVersion = SaveMigrationManager.CURRENT_VERSION,
-            cash = CurrencyManager.Instance.cash,
-            totalCashEarned = CurrencyManager.Instance.totalCashEarned,
-            gems = CurrencyManager.Instance.gems,
-
-            businessLevels = new int[businesses.Length],
-            managerStatuses = new bool[businesses.Length],
-            prestigePoints = PrestigeManager.Instance.prestigePoints,
-            unspentPrestigeCurrency = PrestigeManager.Instance.unspentPrestigeCurrency,
-            prestigeUpgradeLevels = new int[prestigeShopManager.upgrades.Count]
-        };
-
-        for (int i = 0; i < businesses.Length; i++)
-        {
-            data.businessLevels[i] = businesses[i].level;
-            data.managerStatuses[i] = businesses[i].managerUnlocked;
-        }
-
-        for (int i = 0; i < prestigeShopManager.upgrades.Count; i++)
-        {
-            var upgrade = prestigeShopManager.upgrades[i];
-            data.prestigeUpgradeLevels[i] = prestigeShopManager.GetUpgradeLevel(upgrade);
-        }
-
+        SaveData data = GetCurrentSaveData();
         File.WriteAllText(savePath, JsonUtility.ToJson(data));
         Debug.Log("[SaveSystem] Game saved.");
     }
@@ -78,8 +53,6 @@ public class SaveSystem : MonoBehaviour
         }
 
         SaveData data = JsonUtility.FromJson<SaveData>(File.ReadAllText(savePath));
-
-        // 🔁 Run migration before applying values
         SaveMigrationManager.Migrate(ref data);
 
         CurrencyManager.Instance.cash = data.cash;
@@ -110,5 +83,36 @@ public class SaveSystem : MonoBehaviour
             File.Delete(savePath);
             Debug.Log("[SaveSystem] Save file deleted.");
         }
+    }
+
+    public SaveData GetCurrentSaveData()
+    {
+        SaveData data = new SaveData
+        {
+            saveVersion = SaveMigrationManager.CURRENT_VERSION,
+            cash = CurrencyManager.Instance.cash,
+            totalCashEarned = CurrencyManager.Instance.totalCashEarned,
+            gems = CurrencyManager.Instance.gems,
+
+            businessLevels = new int[businesses.Length],
+            managerStatuses = new bool[businesses.Length],
+            prestigePoints = PrestigeManager.Instance.prestigePoints,
+            unspentPrestigeCurrency = PrestigeManager.Instance.unspentPrestigeCurrency,
+            prestigeUpgradeLevels = new int[prestigeShopManager.upgrades.Count]
+        };
+
+        for (int i = 0; i < businesses.Length; i++)
+        {
+            data.businessLevels[i] = businesses[i].level;
+            data.managerStatuses[i] = businesses[i].managerUnlocked;
+        }
+
+        for (int i = 0; i < prestigeShopManager.upgrades.Count; i++)
+        {
+            var upgrade = prestigeShopManager.upgrades[i];
+            data.prestigeUpgradeLevels[i] = prestigeShopManager.GetUpgradeLevel(upgrade);
+        }
+
+        return data;
     }
 }
