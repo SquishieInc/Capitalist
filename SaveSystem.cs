@@ -41,7 +41,7 @@ public class SaveSystem : MonoBehaviour
     {
         SaveData data = new SaveData
         {
-            saveVersion = 1,
+            saveVersion = SaveMigrationManager.CURRENT_VERSION,
             cash = CurrencyManager.Instance.cash,
             totalCashEarned = CurrencyManager.Instance.totalCashEarned,
             gems = CurrencyManager.Instance.gems,
@@ -79,12 +79,8 @@ public class SaveSystem : MonoBehaviour
 
         SaveData data = JsonUtility.FromJson<SaveData>(File.ReadAllText(savePath));
 
-        // 🔐 Save version check
-        if (data.saveVersion < 1)
-        {
-            Debug.LogWarning("[SaveSystem] Old or unknown save version detected. Migration logic can be applied here.");
-            // Handle migration logic if needed in future updates
-        }
+        // 🔁 Run migration before applying values
+        SaveMigrationManager.Migrate(ref data);
 
         CurrencyManager.Instance.cash = data.cash;
         CurrencyManager.Instance.totalCashEarned = data.totalCashEarned;
