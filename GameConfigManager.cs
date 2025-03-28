@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using UnityEngine.SceneManagement;
 
 public class GameConfigManager : MonoBehaviour
 {
@@ -36,5 +37,21 @@ public class GameConfigManager : MonoBehaviour
     {
         OnConfigUpdated?.Invoke();
         Debug.Log("[GameConfigManager] Config updated & sync triggered.");
+    }
+
+    private void OnEnable()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnDisable()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        NotifyConfigUpdated(); // Resync config to all listeners
+        Debug.Log($"[GameConfigManager] Config re-synced on scene load: {scene.name}");
     }
 }
