@@ -1,73 +1,73 @@
 using UnityEngine;
-using TMPro;
-using UnityEngine.UI;
 using System.Collections.Generic;
 
 public class PrestigeShopManager : MonoBehaviour
 {
-    public Transform upgradeListParent;
-    public GameObject upgradeUIPrefab;
-    public List<PrestigeUpgradeSO> upgrades;
+    public static PrestigeShopManager Instance;
 
-    private Dictionary<PrestigeUpgradeSO, int> upgradeLevels = new();
+    [Header("Prestige Upgrades")]
+    public List<PrestigeUpgradeSO> upgrades; // Manually ordered in Inspector
+    private Dictionary<PrestigeUpgradeSO, int> upgradeLevels = new Dictionary<PrestigeUpgradeSO, int>();
 
-    private void Start()
+    private void Awake()
     {
-        LoadUpgradeProgress();
-        RenderUpgradeList();
-    }
-
-    private void RenderUpgradeList()
-    {
-        foreach (var upgrade in upgrades)
+        if (Instance == null)
         {
-            GameObject ui = Instantiate(upgradeUIPrefab, upgradeListParent);
-            ui.GetComponentInChildren<TMP_Text>().text = $"{upgrade.upgradeName}\nLv {GetLevel(upgrade)}/{upgrade.maxLevel}";
-            ui.GetComponentInChildren<Button>().onClick.AddListener(() =>
-            {
-                TryPurchase(upgrade);
-            });
+            Instance = this;
         }
+
+        LoadUpgradeProgress(); // Optional fallback
     }
 
-    private void TryPurchase(PrestigeUpgradeSO upgrade)
-    {
-        if (GetLevel(upgrade) >= upgrade.maxLevel) return;
-        if (PrestigeManager.Instance.unspentPrestigeCurrency < upgrade.cost) return;
-
-        PrestigeManager.Instance.SpendPrestigeCurrency(upgrade.cost);
-        upgradeLevels[upgrade] = GetLevel(upgrade) + 1;
-
-        SaveUpgradeProgress();
-        Debug.Log($"Purchased: {upgrade.upgradeName} → Level {GetLevel(upgrade)}");
-    }
-
-    private int GetLevel(PrestigeUpgradeSO upgrade)
+    public int GetUpgradeLevel(PrestigeUpgradeSO upgrade)
     {
         return upgradeLevels.ContainsKey(upgrade) ? upgradeLevels[upgrade] : 0;
     }
 
-    private void SaveUpgradeProgress()
+    public void SetUpgradeLevel(PrestigeUpgradeSO upgrade, int level)
     {
-        // Optional: Extend SaveSystem to store levels
-        // Or save to PlayerPrefs for now
+        if (upgradeLevels.ContainsKey(upgrade))
+            upgradeLevels[upgrade] = level;
+        else
+            upgradeLevels.Add(upgrade, level);
     }
 
-    private void LoadUpgradeProgress()
+    public float GetTotalEffect(PrestigeUpgradeSO.UpgradeType effectType)
     {
-        // Optional: Load from SaveSystem or PlayerPrefs
-    }
+        float total = 0f;
 
-    public float GetTotalEffect(PrestigeUpgradeSO.UpgradeType type)
-    {
-        float total = 0;
-        foreach (var kv in upgradeLevels)
+        foreach (var upgrade in upgrades)
         {
-            if (kv.Key.upgradeType == type)
+            if (upgrade.effectType == effectType)
             {
-                total += kv.Value * kv.Key.valuePerLevel;
+                int level = GetUpgradeLevel(upgrade);
+                total += upgrade.baseValue * level;
             }
         }
+
         return total;
+    }
+
+    public void BuyUpgrade(PrestigeUpgradeSO upgrade)
+    {
+        int currentLevel = GetUpgradeLevel(upgrade);
+        double cost = upgrade.GetCostForLevel(currentLevel);
+
+        if (PrestigeManager.Instance.unspentPrestigeCurrency >= cost)
+        {
+            PrestigeManager.Instance.SpendPrestigeCurrency(cost);
+            SetUpgradeLevel(upgrade, currentLevel + 1);
+        }
+    }
+
+    // Optional fallback save using PlayerPrefs (not used if SaveSystem is active)
+    private void LoadUpgradeProgress()
+    {
+        foreach (var upgrade in upgrades)
+        {
+            string key = $"prestige_upgrade_{upgrade.upgradeName}";
+            int level = PlayerPrefs.GetInt(key, 0);
+            SetUpgradeLevel(upgrade, level);
+        }
     }
 }
