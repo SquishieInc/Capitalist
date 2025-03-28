@@ -21,6 +21,18 @@ public class BusinessController : MonoBehaviour, IPrestigeable
         CheckAutoCollect();
     }
 
+    private void Update()
+    {
+        if (controller.managerUnlocked)
+        {
+            hireButton.SetActive(false);
+        }
+        else
+        {
+            hireButton.SetActive(controller.level >= controller.unlockManagerAtLevel);
+        }
+    }
+
     public void LevelUp()
     {
         if (CurrencyManager.Instance.SpendCash(currentCost))
