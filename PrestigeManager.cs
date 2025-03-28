@@ -45,10 +45,13 @@ public class PrestigeManager : MonoBehaviour
         }
 
         SaveSystem.Instance.SaveGame();
-        Debug.Log($"[Prestige] +{pointsGained} points earned. Total: {prestigePoints}");
         OnPrestigeCurrencyChanged?.Invoke();
         UpdateDisplay();
 
+        // ✅ NEW: Track with analytics
+        AnalyticsManager.Instance.LogPrestige();
+
+        // Optional: restart scene after reset
         UnityEngine.SceneManagement.SceneManager.LoadScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex);
     }
 
