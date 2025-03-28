@@ -1,8 +1,9 @@
 using UnityEngine;
-using UnityEngine.UI;
 using TMPro;
+using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
-public class PrestigeUpgradeButtonUI : MonoBehaviour
+public class PrestigeUpgradeButtonUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
     [Header("UI Elements")]
     public TMP_Text upgradeNameText;
@@ -29,8 +30,6 @@ public class PrestigeUpgradeButtonUI : MonoBehaviour
 
     public void RefreshUI()
     {
-        if (upgradeData == null) return;
-
         int level = PrestigeShopManager.Instance.GetUpgradeLevel(upgradeData);
         double cost = upgradeData.GetCostForLevel(level);
 
@@ -48,5 +47,15 @@ public class PrestigeUpgradeButtonUI : MonoBehaviour
     {
         PrestigeShopManager.Instance.BuyUpgrade(upgradeData);
         RefreshUI();
+    }
+
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        UpgradeTooltip.Instance.Show(upgradeData, Input.mousePosition);
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        UpgradeTooltip.Instance.Hide();
     }
 }
