@@ -24,22 +24,6 @@ public class BusinessController : MonoBehaviour, IPrestigeable
         CheckAutoCollect();
     }
 
-    private void OnEnable()
-    {
-        GameConfigManager.Instance.OnConfigUpdated += RefreshConfig;
-    }
-
-    private void OnDisable()
-    {
-        GameConfigManager.Instance.OnConfigUpdated -= RefreshConfig;
-    }
-
-    private void RefreshConfig()
-    {
-        CheckAutoCollect(); // Re-evaluate config-sensitive features
-        Debug.Log($"[BusinessController] {businessData.businessName} synced with new config.");
-    }
-
     public void LevelUp()
     {
         var config = GameConfigManager.Instance.Config;
@@ -76,6 +60,15 @@ public class BusinessController : MonoBehaviour, IPrestigeable
         }
     }
 
+    public void HireManager()
+    {
+        if (!managerUnlocked)
+        {
+            managerUnlocked = true;
+            Debug.Log($"Manager hired for {businessData.businessName}!");
+        }
+    }
+
     public double GetCurrentCost() => currentCost;
 
     public double GetIncomePerCycle()
@@ -98,15 +91,6 @@ public class BusinessController : MonoBehaviour, IPrestigeable
         managerUnlocked = false;
     }
 
-    public void HireManager()
-    {
-        if (!managerUnlocked)
-        {
-            managerUnlocked = true;
-            Debug.Log($"Manager hired for {businessData.businessName}!");
-        }
-    }
-
     private void CheckAutoCollect()
     {
         float autoCollectBoost = PrestigeShopManager.Instance.GetTotalEffect(PrestigeUpgradeSO.UpgradeType.AutoCollect);
@@ -118,7 +102,7 @@ public class BusinessController : MonoBehaviour, IPrestigeable
         }
     }
 
-    private double GetLocalPrestigeMultiplier()
+    public double GetLocalPrestigeMultiplier()
     {
         if (milestoneTable == null || milestoneTable.milestones.Count == 0)
             return 1.0;
@@ -140,10 +124,14 @@ public class BusinessController : MonoBehaviour, IPrestigeable
         if (milestonePopupPrefab && popupAnchor)
         {
             GameObject popup = Instantiate(milestonePopupPrefab, popupAnchor.position, Quaternion.identity, popupAnchor);
-            TMP_Text text = popup.GetComponentInChildren<TMP_Text>();
+            TMPro.TMP_Text text = popup.GetComponentInChildren<TMPro.TMP_Text>();
             if (text) text.text = $"Milestone Reached!\nx{newBonus} Income!";
             Destroy(popup, 2f);
         }
+
+        // VFX + SFX
+        VFXManager.Instance?.PlayVFX(VFXManager.Instance.milestoneFlash, popupAnchor.position);
+        AudioManager.Instance?.PlaySFX(AudioManager.Instance.milestoneSFX);
 
         Debug.Log($"[Milestone] {businessData.businessName} hit x{newBonus} bonus!");
     }
