@@ -1,57 +1,88 @@
 using UnityEngine;
+using System.IO;
 
-public class CurrencyManager : MonoBehaviour
+public class SaveSystem : MonoBehaviour
 {
-    public static CurrencyManager Instance;
+    public static SaveSystem Instance;
 
-    [Header("Primary Currencies")]
-    public double cash = 0;
-    public double totalCashEarned = 0;
+    private string savePath => Application.persistentDataPath + "/save.json";
 
-    [Header("Premium Currency")]
-    public int gems = 0;
+    [System.Serializable]
+    public class SaveData
+    {
+        public double cash;
+        public double totalCashEarned;
+        public int gems;
+
+        public int[] businessLevels;
+        public bool[] managerStatuses;
+
+        public double prestigePoints;
+        public double unspentPrestigeCurrency;
+
+        public int[] prestigeUpgradeLevels;
+    }
+
+    public BusinessController[] businesses;
+    public PrestigeShopManager prestigeShopManager;
 
     private void Awake()
     {
         if (Instance == null) Instance = this;
     }
 
-    public void AddCash(double amount)
+    public void SaveGame()
     {
-        cash += amount;
-        totalCashEarned += amount;
-    }
-
-    public bool SpendCash(double amount)
-    {
-        if (cash >= amount)
+        SaveData data = new SaveData
         {
-            cash -= amount;
-            return true;
-        }
-        return false;
-    }
+            cash = CurrencyManager.Instance.cash,
+            totalCashEarned = CurrencyManager.Instance.totalCashEarned,
+            gems = CurrencyManager.Instance.gems,
 
-    public void AddGems(int amount)
-    {
-        gems += amount;
-    }
+            businessLevels = new int[businesses.Length],
+            managerStatuses = new bool[businesses.Length],
+            prestigePoints = PrestigeManager.Instance.prestigePoints,
+            unspentPrestigeCurrency = PrestigeManager.Instance.unspentPrestigeCurrency,
+            prestigeUpgradeLevels = new int[prestigeShopManager.upgrades.Count]
+        };
 
-    public bool SpendGems(int amount)
-    {
-        if (gems >= amount)
+        for (int i = 0; i < businesses.Length; i++)
         {
-            gems -= amount;
-            return true;
+            data.businessLevels[i] = businesses[i].level;
+            data.managerStatuses[i] = businesses[i].managerUnlocked;
         }
-        return false;
+
+        for (int i = 0; i < prestigeShopManager.upgrades.Count; i++)
+        {
+            var upgrade = prestigeShopManager.upgrades[i];
+            data.prestigeUpgradeLevels[i] = prestigeShopManager.GetUpgradeLevel(upgrade);
+        }
+
+        File.WriteAllText(savePath, JsonUtility.ToJson(data));
     }
 
-    public double GetTotalCashEarned() => totalCashEarned;
-
-    public void ResetCash()
+    public void LoadGame()
     {
-        cash = 0;
-        totalCashEarned = 0;
+        if (!File.Exists(savePath)) return;
+
+        SaveData data = JsonUtility.FromJson<SaveData>(File.ReadAllText(savePath));
+
+        CurrencyManager.Instance.cash = data.cash;
+        CurrencyManager.Instance.totalCashEarned = data.totalCashEarned;
+        CurrencyManager.Instance.gems = data.gems;
+
+        for (int i = 0; i < businesses.Length; i++)
+        {
+            businesses[i].level = data.businessLevels[i];
+            businesses[i].managerUnlocked = data.managerStatuses[i];
+        }
+
+        PrestigeManager.Instance.LoadFromSave(data.prestigePoints, data.unspentPrestigeCurrency);
+
+        for (int i = 0; i < prestigeShopManager.upgrades.Count; i++)
+        {
+            var upgrade = prestigeShopManager.upgrades[i];
+            prestigeShopManager.SetUpgradeLevel(upgrade, data.prestigeUpgradeLevels[i]);
+        }
     }
 }
