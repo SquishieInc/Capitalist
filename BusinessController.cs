@@ -24,12 +24,28 @@ public class BusinessController : MonoBehaviour, IPrestigeable
         CheckAutoCollect();
     }
 
+    private void OnEnable()
+    {
+        GameConfigManager.Instance.OnConfigUpdated += RefreshConfig;
+    }
+
+    private void OnDisable()
+    {
+        GameConfigManager.Instance.OnConfigUpdated -= RefreshConfig;
+    }
+
+    private void RefreshConfig()
+    {
+        CheckAutoCollect(); // Re-evaluate config-sensitive features
+        Debug.Log($"[BusinessController] {businessData.businessName} synced with new config.");
+    }
+
     public void LevelUp()
     {
+        var config = GameConfigManager.Instance.Config;
+
         if (CurrencyManager.Instance.SpendCash(currentCost))
         {
-            var config = GameConfigManager.Instance.Config;
-
             level++;
             currentCost *= businessData.costMultiplier;
 
@@ -49,7 +65,6 @@ public class BusinessController : MonoBehaviour, IPrestigeable
         if (level > 0 && (managerUnlocked || level >= config.defaultManagerUnlockLevel))
         {
             double baseIncome = businessData.baseIncome * Mathf.Pow(level, businessData.incomeGrowth);
-
             double prestigeMultiplier = 1.0 + config.prestigeMultiplierPerPoint * PrestigeManager.Instance.prestigePoints;
             float shopBoost = PrestigeShopManager.Instance.GetTotalEffect(PrestigeUpgradeSO.UpgradeType.IncomeMultiplier);
             double shopMultiplier = 1.0 + shopBoost;
@@ -94,9 +109,9 @@ public class BusinessController : MonoBehaviour, IPrestigeable
 
     private void CheckAutoCollect()
     {
+        float autoCollectBoost = PrestigeShopManager.Instance.GetTotalEffect(PrestigeUpgradeSO.UpgradeType.AutoCollect);
         var config = GameConfigManager.Instance.Config;
 
-        float autoCollectBoost = PrestigeShopManager.Instance.GetTotalEffect(PrestigeUpgradeSO.UpgradeType.AutoCollect);
         if (autoCollectBoost > 0 && level >= config.defaultManagerUnlockLevel && !managerUnlocked)
         {
             HireManager();
