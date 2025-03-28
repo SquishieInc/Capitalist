@@ -5,10 +5,12 @@ public class GameBalanceConfigSO : ScriptableObject
 {
     [Header("Prestige Settings")]
     public float prestigeMultiplierPerPoint = 0.1f;
+    public double prestigeBaseDivisor = 1_000_000; // NEW
 
     [Header("Offline Earnings")]
     public float offlineEarningsPenalty = 0.25f;
     public float offlineEarningsBoostCap = 3f;
+    public float baseOfflineEarningsRate = 10f; // NEW
 
     [Header("Manager Settings")]
     public float hireManagerCostMultiplier = 5.0f;
@@ -17,6 +19,9 @@ public class GameBalanceConfigSO : ScriptableObject
     [Header("Upgrade Economics")]
     public float defaultCostMultiplier = 1.15f;
     public float defaultIncomeGrowth = 1.0f;
+
+    [Header("Anti-Cheat")]
+    public float timeCheatPenaltyMultiplier = 0.25f; // NEW
 
     [Header("Debug")]
     public bool allowDebugButtons = true;
