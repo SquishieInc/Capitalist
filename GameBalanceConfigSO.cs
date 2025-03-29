@@ -1,7 +1,7 @@
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "GameBalanceConfig", menuName = "Idle/Game Balance Config")]
-public class GameBalanceConfigSO : ScriptableObjectect
+public class GameBalanceConfigSO : ScriptableObject
 {
     [Header("Prestige Settings")]
     public float prestigeMultiplierPerPoint = 0.1f;
