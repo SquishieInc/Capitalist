@@ -1,7 +1,7 @@
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "GameBalanceConfig", menuName = "Idle/Game Balance Config")]
-public class GameBalanceConfigSO : ScriptableObject
+public class GameBalanceConfigSO : ScriptableObjectect
 {
     [Header("Prestige Settings")]
     public float prestigeMultiplierPerPoint = 0.1f;
@@ -10,7 +10,8 @@ public class GameBalanceConfigSO : ScriptableObject
     [Header("Offline Earnings")]
     public float offlineEarningsPenalty = 0.25f;
     public float offlineEarningsBoostCap = 3f;
-    public float baseOfflineEarningsRate = 10f; // NEW
+    public float baseOfflineEarningsRate = 10f; 
+    public float offlineEarningsCapHours = 8f;
 
     [Header("Manager Settings")]
     public float hireManagerCostMultiplier = 5.0f;
